@@ -1,19 +1,33 @@
-const express = require('express');
+// FRAMEWORK CONFIGURATION
+// --- Always Import/Require on top ---
+const express = require("express");
 const cors = require("cors");
-const app = express();
-
-// Import the example route
+const dotenv = require("dotenv");
+const connectDb=require('./config/dbConnection')
 const exampleRoute = require('./routes/example');
 
-// Middleware to use the example route
-app.use('/example', exampleRoute);
-app.use(express.json());
-app.use(cors()); // cors is used as a security feature in javascript that allows web application running in one domain to make request to resource in another domain
+// env file config
+dotenv.config();
 
+// Connect to the database
+connectDb();
 
-// Start the server on a different port
-const port = process.env.PORT || 8080;  // Changed to port 8080
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+const app = express();
+const port = process.env.PORT || 8080;  // Default to port 8080
+
+// Middleware configuration
+app.use(express.json());  // Parse incoming JSON requests
+app.use(cors());  // Enable CORS for security
+
+// Route configuration
+app.use('/example', exampleRoute);  // Route for '/example'
+
+// Health check route
+app.get('/', (req, res) => {
+    res.send("Server is working");
 });
 
+// APP CONFIG START
+app.listen(port, () => {
+    console.log(`Server running on https://localhost:${port}`);
+});
