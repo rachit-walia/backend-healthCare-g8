@@ -25,6 +25,24 @@ app.set('view engine', 'hbs');
 // Route configuration
 app.use('/example', exampleRoute);  // Route for '/example'
 
+
+// Updated /home route with multiple users using a for loop
+app.get("/home", (req, res) => {
+    const users = [
+        { name: "Rachit Walia", age: 20, email: "rachitwalia3@gmail.com" },
+        { name: "Parag", age: 19, email: "parag@gmail.com" },
+        { name: "Rachit Munjal", age: 20, email: "munjal@gmail.com" }
+    ];
+    
+    res.render("home", {
+        users: users
+    });
+});
+
+app.get("/allusers", (req, res) => {
+    res.render("user", {
+        users: [{id:1, username: "rachit"},{id:1, username: "walia"}]});
+});
 // Health check route
 app.get('/', (req, res) => {
     res.send("Server is working");
