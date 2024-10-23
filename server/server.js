@@ -3,7 +3,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const connectDb=require('./config/dbConnection')
+const connectDb = require('./config/dbConnection');
 const exampleRoute = require('./routes/example');
 
 // env file config
@@ -19,6 +19,9 @@ const port = process.env.PORT || 8080;  // Default to port 8080
 app.use(express.json());  // Parse incoming JSON requests
 app.use(cors());  // Enable CORS for security
 
+// Set Handlebars (hbs) as the view engine
+app.set('view engine', 'hbs');
+
 // Route configuration
 app.use('/example', exampleRoute);  // Route for '/example'
 
@@ -29,5 +32,5 @@ app.get('/', (req, res) => {
 
 // APP CONFIG START
 app.listen(port, () => {
-    console.log(`Server running on https://localhost:${port}`);
+    console.log(`Server running on http://localhost:${port}`);
 });
