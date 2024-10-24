@@ -25,7 +25,6 @@ app.set('view engine', 'hbs');
 // Route configuration
 app.use('/example', exampleRoute);  // Route for '/example'
 
-
 // Updated /home route with multiple users using a for loop
 app.get("/home", (req, res) => {
     const users = [
@@ -41,12 +40,17 @@ app.get("/home", (req, res) => {
 
 app.get("/allusers", (req, res) => {
     res.render("user", {
-        users: [{id:1, username: "rachit"},{id:1, username: "walia"}]});
+        users: [{id: 1, username: "rachit"},{id: 2, username: "walia"}]
+    });
 });
+
 // Health check route
 app.get('/', (req, res) => {
     res.send("Server is working");
 });
+
+// Route for User Registration and Authentication
+app.use("/api/register", require("./routes/userRoutes"));  // Import userRoutes
 
 // APP CONFIG START
 app.listen(port, () => {
