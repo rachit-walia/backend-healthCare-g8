@@ -1,71 +1,54 @@
-const mongoose = require('mongoose');
+const asyncHandler = require("express-async-handler");
+const bcrypt = require("bcrypt");
+const User = require("../models/userModel"); // Adjust the path based on your structure
 
-// Define the schema
-const userSchema = new mongoose.Schema(
-  {
-    firstName: {
-      type: String,
-      required: true,
-      trim: true  // Trims extra whitespace
-    },
-    lastName: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,  // Email should be unique
-      lowercase: true,  // Converts email to lowercase before saving
-      validate: {
-        validator: function (v) {
-          // Email validation using regular expression
-          return /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(v);
-        },
-        message: props => `${props.value} is not a valid email!`
-      }
-    },
-    age: {
-      type: Number,
-      required: true,
-      min: 18,  // Minimum age requirement
-      max: 100  // Maximum age limit
-    },
-    bloodGroup: {
-      type: String,
-      enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],  // Only allows valid blood groups
-      required: true
-    },
-    gender: {
-      type: String,
-      enum: ['Male', 'Female', 'Other'],  // Restrict gender options to these values
-      required: true
-    },
-    phoneNumber: {
-      type: Number,  // Storing phone number as a number
-      required: true,
-      unique: true,
-      validate: {
-        validator: function (v) {
-          // Ensure the phone number is 10 digits
-          return /^\d{10}$/.test(v.toString());
-        },
-        message: props => `${props.value} is not a valid phone number!`
-      }
-    },
-    password: {
-      type: String,
-      required: true,
-      minlength: 8  // Enforces a minimum password length
+// Register User
+const registerUser = asyncHandler(async (req, res) => {
+    const { firstName, lastName, email, password, age, bloodGroup, gender, phoneNumber } = req.body;
+
+    // Check if all fields are provided
+    if (!firstName || !lastName || !email || !password || !age || !bloodGroup || !gender || !phoneNumber) {
+        res.status(400);
+        throw new Error("Please provide all required fields");
     }
-  },
-  {
-    timestamps: true  // Adds createdAt and updatedAt timestamps
-  }
-);
 
-// Create and export the User model
-const User = mongoose.model('User', userSchema);
+    // Check if user already exists
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+        return res.status(400).json({ message: "User already exists with this email" });
+    }
 
-module.exports = User;
+    // Hash the password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create the user
+    const user = await User.create({
+        firstName,
+        lastName,
+        email,
+        password: hashedPassword,
+        age,
+        bloodGroup,
+        gender,
+        phoneNumber,
+    });
+
+    // Respond with the user information, excluding the password
+    res.status(201).json({
+        message: "User registered successfully",
+        user: {
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            age: user.age,
+            bloodGroup: user.bloodGroup,
+            gender: user.gender,
+            phoneNumber: user.phoneNumber,
+        }
+    });
+});
+
+// Exporting the controller methods
+module.exports = { registerUser };
