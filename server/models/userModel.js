@@ -1,54 +1,53 @@
-const asyncHandler = require("express-async-handler");
-const bcrypt = require("bcrypt");
-const User = require("../models/userModel"); // Adjust the path based on your structure
+const mongoose = require('mongoose');
 
-// Register User
-const registerUser = asyncHandler(async (req, res) => {
-    const { firstName, lastName, email, password, age, bloodGroup, gender, phoneNumber } = req.body;
-
-    // Check if all fields are provided
-    if (!firstName || !lastName || !email || !password || !age || !bloodGroup || !gender || !phoneNumber) {
-        res.status(400);
-        throw new Error("Please provide all required fields");
-    }
-
-    // Check if user already exists
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-        return res.status(400).json({ message: "User already exists with this email" });
-    }
-
-    // Hash the password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create the user
-    const user = await User.create({
-        firstName,
-        lastName,
-        email,
-        password: hashedPassword,
-        age,
-        bloodGroup,
-        gender,
-        phoneNumber,
-    });
-
-    // Respond with the user information, excluding the password
-    res.status(201).json({
-        message: "User registered successfully",
-        user: {
-            id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            age: user.age,
-            bloodGroup: user.bloodGroup,
-            gender: user.gender,
-            phoneNumber: user.phoneNumber,
-        }
-    });
+// Define the User schema
+const userSchema = new mongoose.Schema({
+    firstName: {
+        type: String,
+        required: true,
+    },
+    lastName: {
+        type: String,
+        required: true,
+    },
+    email: {
+        type: String,
+        required: true,
+        unique: true, // Ensure no duplicate emails
+        trim: true, // Trim whitespace
+    },
+    password: {
+        type: String,
+        required: true,
+        minlength: 6, // Ensure minimum password length
+    },
+    age: {
+        type: Number,
+        required: true,
+        min: 0, // Minimum age
+    },
+    bloodGroup: {
+        type: String,
+        required: true,
+        enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'], // Restrict to valid blood groups
+    },
+    gender: {
+        type: String,
+        required: true,
+        enum: ['Male', 'Female', 'Other'], // Restrict to valid genders
+    },
+    phoneNumber: {
+        type: String,
+        required: true,
+        unique: true, // Ensure no duplicate phone numbers
+        trim: true, // Trim whitespace
+    },
+}, {
+    timestamps: true, // Automatically add createdAt and updatedAt fields
 });
 
-// Exporting the controller methods
-module.exports = { registerUser };
+// Create the User model
+const User = mongoose.model('User', userSchema);
+
+// Export the User model
+module.exports = User;

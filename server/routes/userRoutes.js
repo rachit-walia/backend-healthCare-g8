@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const asyncHandler = require('express-async-handler');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt'); // Import bcrypt for password hashing
 const User = require('../models/userModel'); // Adjust the path based on your structure
 
 // POST /api/register - Register a new user

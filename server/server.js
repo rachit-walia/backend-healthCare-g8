@@ -4,16 +4,13 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const userRoutes = require('./routes/userRoutes'); // Import user routes
 
-// env file config
+// Load environment variables from .env file
 dotenv.config();
 
 // Connect to the database
 const connectDb = async () => {
     try {
-        await mongoose.connect(process.env.MONGODB_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
+        await mongoose.connect(process.env.MONGO_URI); // Connect to MongoDB
         console.log("MongoDB connected successfully.");
     } catch (error) {
         console.error("MongoDB connection failed:", error.message);
@@ -21,6 +18,7 @@ const connectDb = async () => {
     }
 };
 
+// Call the function to connect to the database
 connectDb();
 
 const app = express();
@@ -41,10 +39,10 @@ app.get('/', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).send('Something broke!');
+    res.status(500).send('Something broke!'); // Send a generic error response
 });
 
-// APP CONFIG START
+// Start the server
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
 });

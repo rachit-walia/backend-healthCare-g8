@@ -1,6 +1,6 @@
-const asyncHandler = require("express-async-handler");
-const bcrypt = require("bcrypt");
-const User = require("../models/userModel"); // Adjust the path based on your structure
+const asyncHandler = require('express-async-handler');
+const bcrypt = require('bcrypt');
+const User = require('../models/userModel'); // Adjust the path as necessary
 
 // Register User
 const registerUser = asyncHandler(async (req, res) => {
@@ -50,5 +50,4 @@ const registerUser = asyncHandler(async (req, res) => {
     });
 });
 
-// Exporting the controller methods
 module.exports = { registerUser };
