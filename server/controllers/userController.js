@@ -1,53 +1,41 @@
-const asyncHandler = require('express-async-handler');
-const bcrypt = require('bcrypt');
-const User = require('../models/userModel'); // Adjust the path as necessary
+const asyncHandler = require("express-async-handler");
+const bcrypt = require("bcrypt");
+const User = require("../modules/userModel");
+require("dotenv").config();
 
-// Register User
 const registerUser = asyncHandler(async (req, res) => {
-    const { firstName, lastName, email, password, age, bloodGroup, gender, phoneNumber } = req.body;
+    const { firstName, lastName, email, password, phoneNumber, age, bloodGroup, gender } = req.body;
 
     // Check if all fields are provided
-    if (!firstName || !lastName || !email || !password || !age || !bloodGroup || !gender || !phoneNumber) {
+    if (!firstName || !lastName || !email || !password || !phoneNumber || !age || !bloodGroup || !gender) {
         res.status(400);
         throw new Error("Please provide all required fields");
     }
 
     // Check if user already exists
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-        return res.status(400).json({ message: "User already exists with this email" });
+    const userExist = await User.findOne({ email });
+    if (userExist) {
+        return res.status(400).json({ message: "User already exists" });
     }
 
-    // Hash the password
+    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create the user
-    const user = await User.create({
+    const newUser = await User.create({
         firstName,
         lastName,
         email,
-        password: hashedPassword,
+        phoneNumber,
         age,
         bloodGroup,
         gender,
-        phoneNumber,
+        password: hashedPassword,
     });
 
-    // Respond with the user information, excluding the password
-    res.status(201).json({
-        message: "User registered successfully",
-        user: {
-            id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            age: user.age,
-            bloodGroup: user.bloodGroup,
-            gender: user.gender,
-            phoneNumber: user.phoneNumber,
-        }
-    });
+    // Send success response
+    res.status(201).json({ message: "User registered successfully", newUser });
 });
 
 module.exports = { registerUser };
