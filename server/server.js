@@ -3,6 +3,8 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const userRoutes = require('./routes/userRoutes'); // Import user routes
+const doctorRoutes = require('./routes/doctorRoutes'); // Import doctor routes
+
 
 // Load environment variables from .env file
 dotenv.config();
@@ -41,6 +43,10 @@ app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).send('Something broke!'); // Send a generic error response
 });
+
+
+// Route configuration
+app.use('/api/doctors', doctorRoutes); // Doctor routes under /api/doctors path
 
 // Start the server
 app.listen(port, () => {
