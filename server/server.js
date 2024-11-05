@@ -1,54 +1,68 @@
+//Framework Configuration
 const express = require("express");
+const connectDb = require("./config/dbConnection");
+const errorHandler = require("./middlewares/errorHandler");
 const cors = require("cors");
+// const hbs = require("hbs");
+const path = require("path");
+const multer = require("multer");
+const upload = multer({dest:'./uploads' });
+
 const dotenv = require("dotenv");
-const mongoose = require("mongoose");
-const userRoutes = require('./routes/userRoutes'); // Import user routes
-const doctorRoutes = require('./routes/doctorRoutes'); // Import doctor routes
-
-
-// Load environment variables from .env file
 dotenv.config();
 
-// Connect to the database
-const connectDb = async () => {
-    try {
-        await mongoose.connect(process.env.MONGO_URI); // Connect to MongoDB
-        console.log("MongoDB connected successfully.");
-    } catch (error) {
-        console.error("MongoDB connection failed:", error.message);
-        process.exit(1); // Exit process with failure
-    }
-};
-
-// Call the function to connect to the database
 connectDb();
-
 const app = express();
-const port = process.env.PORT || 3001; // Set port to 3001
+const port = process.env.PORT || 5000;
 
-// Middleware configuration
-app.use(express.json()); // Parse incoming JSON requests
-app.use(cors()); // Enable CORS for security
+app.use(express.json());
+app.use(cors());
 
-// Route configuration
-app.use('/api', userRoutes); // Import user routes under the /api path
+app.use(errorHandler);
 
-// Health check route
-app.get('/', (req, res) => {
-    res.send("Server is working");
+
+const hbs = require('hbs');
+hbs.registerPartials(path.join(__dirname, '/views/partials'));
+app.set('view engine', 'hbs');
+
+app.use('/api/register', require("./routes/userRoutes"));
+app.use("/api/doctors", require("./routes/doctorRoutes"));
+app.use("/api/users", require("./routes/userRoutes"));
+app.use(errorHandler);
+//ROUTES BELOW
+app.get('/',(req,res)=>{
+    res.send("working");
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Something broke!'); // Send a generic error response
+app.get('/home', (req, res) => {
+    res.render("home", {
+        title: "Dynamic Home Page",
+        message: "Welcome to the dynamic home page!",
+        user: {
+            name: "John Doe",
+            age: 30
+        }
+    });
+})
+
+app.get('/allusers', (req, res) => {
+    // Mock array of user objects (replace with real data from a database)
+    const users = [
+        { name: "John Doe", age: 30, email: "johndoe@example.com", role: "Admin" },
+        { name: "Jane Smith", age: 25, email: "janesmith@example.com", role: "User" },
+        { name: "Alice Johnson", age: 28, email: "alicejohnson@example.com", role: "Moderator" }
+    ];
+    // Pass the users array to the view
+    res.render('users', { users });
 });
 
 
-// Route configuration
-app.use('/api/doctors', doctorRoutes); // Doctor routes under /api/doctors path
+app.post("/profile", upload.single("avatar"),function(req, res, next) {
+    console.log(req.body);
+    console.log(req.file);
+    return res.redirect("/home");
+})
 
-// Start the server
-app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
+app.listen(port, () =>{
+    console.log(`Server running in port http://localhost:${port}`);
 });

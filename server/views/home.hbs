@@ -1,20 +1,25 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User List</title>
+    <title>{{title}}</title>
 </head>
+
 <body>
-    <h1>User Information</h1>
+    {{> header}}
+
+    <h1>{{message}}</h1>
+    <p>User Information:</p>
     <ul>
-        {{#each users}}
-            <li>
-                <strong>Name:</strong> {{this.name}} <br>
-                <strong>Age:</strong> {{this.age}} <br>
-                <strong>Email:</strong> {{this.email}} <br>
-            </li>
-        {{/each}}
+        <li>Name: {{user.name}}</li>
+        <li>Age: {{user.age}}</li>
     </ul>
+    <div>
+        <form action="/profile" method="post" enctype="multipart/form-data">
+            <input type="file" name="avatar">
+            <input type="submit" value="upload">
+        </form>
+    </div>
 </body>
+
 </html>
