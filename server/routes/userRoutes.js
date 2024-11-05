@@ -2,6 +2,10 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/userModel"); // Correct path to modules
+const { loginUser } = require("../controllers/loginController");
+
+// login route
+router.post("/login", loginUser);
 
 // Register a new user
 router.post("/register", async (req, res) => {
