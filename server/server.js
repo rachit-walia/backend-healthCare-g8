@@ -12,6 +12,18 @@ connectDb();
 const app = express();
 const port = process.env.PORT || 5000;
 
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, 'uploads')
+    },
+    filename: function (req, file, cb) {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+      cb(null, file.fieldname + '-' + uniqueSuffix+path.extname(file.originalname));
+    }
+  })
+  
+  const upload = multer({ storage: storage })
+
 app.use(express.json());
 app.use(cors());
 app.use(errorHandler);
@@ -25,7 +37,7 @@ app.set('view engine', 'hbs');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Configure multer for file uploads
-const upload = multer({ dest: './uploads' });
+// const upload = multer({ dest: './uploads' });
 
 // Routes
 app.use('/api/register', require("./routes/userRoutes"));
