@@ -1,14 +1,15 @@
 const express = require("express");
 const router = express.Router();
-const { registerDoctor, getAllDoctors, getDoctorById } = require("../controllers/doctorController");
+const {
+  registerDoctor,
+  getAllDoctors,
+  getDoctorByEmail
+} = require("../controllers/doctorsDetailsController");
+const jwtAuthMiddleware = require("../middlewares/jwtMiddleware");
 
-// Define `/register` route before `/:id` to avoid route conflicts
 router.post("/register", registerDoctor);
-
-// Get all doctors
-router.get("/", getAllDoctors);
-
-// Get a doctor by ID (define after `/register` to avoid conflicts)
-router.get("/:id", getDoctorById);
+router.get("/", jwtAuthMiddleware.validateJwtToken, getAllDoctors);
+router.get("/email/:email",jwtAuthMiddleware.validateJwtToken, getDoctorByEmail);
+// router.post("/login", jwtAuthMiddleware.generateJwtToken, loginDoctor);
 
 module.exports = router;

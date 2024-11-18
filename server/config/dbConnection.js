@@ -1,13 +1,19 @@
+
+// to connect database wwith server
 const mongoose = require("mongoose");
 
-const connectDb = async () => {
-    try {
-        // Use process.env.MONGO_URI to connect to the database
-        const connect = await mongoose.connect(process.env.MONGO_URI);
+const connectDb = async() => {
+
+    // try and catch basically hum error handling k liye use krre hain
+    try{
+        // await -> 
+        const connect = await mongoose.connect(process.env.CONNECTIONSTRING);
         console.log("Database connected: ", connect.connection.host, connect.connection.name);
-    } catch (err) {
+    }
+    catch(err){
         console.log(err);
-        process.exit(1); // Exit if connection fails
+        // 1 -> fail, 0 -> pass
+        process.exit(1);
     }
 };
 

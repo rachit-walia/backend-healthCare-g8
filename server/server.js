@@ -1,98 +1,80 @@
 const express = require("express");
 const connectDb = require("./config/dbConnection");
+const userRoutes = require("./routes/userRoutes");
 const errorHandler = require("./middlewares/errorHandler");
-const cors = require("cors");
+const doctorRoutes = require("./routes/doctorRoutes");
 const path = require("path");
 const multer = require("multer");
-
+// const upload = multer({ dest: "./uploads" });
+const cors = require("cors");
 const dotenv = require("dotenv");
-dotenv.config();
-
-connectDb();
 const app = express();
 const port = process.env.PORT || 5000;
-
+dotenv.config();
+connectDb();
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, 'uploads')
-    },
-    filename: function (req, file, cb) {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-      cb(null, file.fieldname + '-' + uniqueSuffix+path.extname(file.originalname));
-    }
-  })
-  
-  const upload = multer({ storage: storage })
+  destination: function (req, file, cb) {
+    cb(null, "uploads");
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, file.fieldname + "-" + uniqueSuffix)+path.extname(file.originalname);
+  },
+});
 
+const upload = multer({ storage: storage });
+console.log(process.env.PRIVATE_KEY);
+
+// App Config
+
+
+// Middleware
 app.use(express.json());
 app.use(cors());
 app.use(errorHandler);
+// Serve static files from "uploads" folder
 
-// Configure Handlebars
-const hbs = require('hbs');
-hbs.registerPartials(path.join(__dirname, '/views/partials'));
-app.set('view engine', 'hbs');
-
-// Configure static files for image serving
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Configure multer for file uploads
-// const upload = multer({ dest: './uploads' });
+// View Engine
+const hbs = require("hbs");
+hbs.registerPartials(path.join(__dirname, "/views/partials"));
+app.set("view engine", "hbs");
 
 // Routes
-app.use('/api/register', require("./routes/userRoutes"));
-app.use("/api/doctors", require("./routes/doctorRoutes"));
-app.use("/api/users", require("./routes/userRoutes"));
-app.use(errorHandler);
-
-// Homepage route
 app.get('/', (req, res) => {
     res.send("working");
 });
 
-// Home view with dynamic content
-app.get('/home', (req, res) => {
-    res.render("home", {
-        title: "Dynamic Home Page",
-        message: "Welcome to the dynamic home page!",
-        user: {
-            name: "John Doe",
-            age: 30
-        },
-        imageUrl: null // No image initially
-    });
+app.use('/api/users', userRoutes);
+
+app.get("/home", (req, res) => {
+    const user1 = { name: "rachit", age: "20" };
+    const user2 = { name: "walia", age: "21" };
+    res.render("home", { user1, user2 });
 });
+
+app.get("/allusers", (req, res) => {
+    res.render("users", { users: [{ id: 1, username: "rachit", age: 23 }, { id: 2, username: "walia", age: 24 }] });
+});
+
+app.use("/api/doctors", doctorRoutes);
 
 // Profile upload route
-app.post("/profile", upload.single("avatar"), (req, res) => {
-    if (req.file) {
-        const filePath = `/uploads/${req.file.filename}`;
-        res.render("home", {
-            title: "Profile Uploaded",
-            message: "Profile image uploaded successfully!",
-            user: {
-                name: "John Doe",
-                age: 30
-            },
-            imageUrl: filePath // Pass image URL to render on the page
-        });
-    } else {
-        res.status(400).send("No file uploaded.");
-    }
-});
+app.post("/profile", upload.single("avatar"), function (req, res, next) {
+  if (!req.file) {
+    return res.status(400).send("No file uploaded.");
+  }
+  console.log(req.body);
+  console.log(req.file);
 
-// Route for all users (example data)
-app.get('/allusers', (req, res) => {
-    const users = [
-        { name: "John Doe", age: 30, email: "johndoe@example.com", role: "Admin" },
-        { name: "Jane Smith", age: 25, email: "janesmith@example.com", role: "User" },
-        { name: "Alice Johnson", age: 28, email: "alicejohnson@example.com", role: "Moderator" }
-    ];
-    res.render('users', { users });
+  const fileName = req.file.filename;
+  const imageUrl = `/uploads/${fileName}`;
+  return res.render("home", {
+    imageUrl: imageUrl,
+  });
 });
-
-// Start the server
+// app.use("/uploads", express.static(path.join(__dirname, "./uploads")));
+// Server Start
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+    console.log(`Server running on http://localhost:${port}`);
 });
-

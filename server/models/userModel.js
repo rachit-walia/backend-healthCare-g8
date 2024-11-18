@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 // Define the schema
 const userSchema = new mongoose.Schema(
@@ -34,12 +34,12 @@ const userSchema = new mongoose.Schema(
     },
     bloodGroup: {
       type: String,
-      enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'], // Only allows valid blood groups
+      enum: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], // Only allows valid blood groups
       required: true,
     },
     gender: {
       type: String,
-      enum: ['Male', 'Female', 'Other'], // Restrict gender options to these values
+      enum: ["Male", "Female", "Other"], // Restrict gender options to these values
       required: true,
     },
     phoneNumber: {
@@ -66,6 +66,5 @@ const userSchema = new mongoose.Schema(
 );
 
 // Create and export the User model
-const User = mongoose.model('User', userSchema);
-
+const User = mongoose.model("User", userSchema);
 module.exports = User;
