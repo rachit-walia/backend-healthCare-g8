@@ -1,80 +1,87 @@
-const express = require("express");
-const connectDb = require("./config/dbConnection");
-const userRoutes = require("./routes/userRoutes");
-const errorHandler = require("./middlewares/errorHandler");
-const doctorRoutes = require("./routes/doctorRoutes");
-const path = require("path");
-const multer = require("multer");
-// const upload = multer({ dest: "./uploads" });
-const cors = require("cors");
 const dotenv = require("dotenv");
+dotenv.config();
+const express = require("express");
+const cors = require("cors");
+const multer = require("multer");
+const path = require("path");
+const hbs = require("hbs");
+const connectDb = require("./config/dbConnection");
+const errorHandler = require("./middlewares/errorHandler");
+const fs = require('fs');
+
+// Ensure upload directory exists
+const uploadDir = process.env.UPLOAD_DIR || "uploads";
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+connectDb();
 const app = express();
 const port = process.env.PORT || 5000;
-dotenv.config();
-connectDb();
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads");
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + "-" + uniqueSuffix)+path.extname(file.originalname);
-  },
-});
 
-const upload = multer({ storage: storage });
-console.log(process.env.PRIVATE_KEY);
-
-// App Config
-
-
-// Middleware
+app.use('/uploads', express.static(path.join(__dirname, uploadDir)));
 app.use(express.json());
 app.use(cors());
-app.use(errorHandler);
-// Serve static files from "uploads" folder
 
-// View Engine
-const hbs = require("hbs");
-hbs.registerPartials(path.join(__dirname, "/views/partials"));
-app.set("view engine", "hbs");
+// Handlebars setup
+hbs.registerPartials(path.join(__dirname, '/views/partials'));
+app.set('view engine', 'hbs');
+
+// Multer configuration
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 1024 * 1024 * 2 },
+  fileFilter: (req, file, cb) => {
+    const fileTypes = /jpeg|jpg|png|gif/;
+    const extName = fileTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimeType = fileTypes.test(file.mimetype);
+    extName && mimeType ? cb(null, true) : cb(new Error("Invalid file type"));
+  }
+});
 
 // Routes
-app.get('/', (req, res) => {
-    res.send("working");
-});
+app.get("/", (req, res) => res.send("Server is working"));
+app.use("/api/users", require("./routes/userRoutes"));
+app.use("/api/doctors", require("./routes/doctorRoutes"));
 
-app.use('/api/users', userRoutes);
+// Render views
+app.get("/home", (req, res) => res.render("home", { title: "Home Page" }));
 
-app.get("/home", (req, res) => {
-    const user1 = { name: "rachit", age: "20" };
-    const user2 = { name: "walia", age: "21" };
-    res.render("home", { user1, user2 });
-});
-
-app.get("/allusers", (req, res) => {
-    res.render("users", { users: [{ id: 1, username: "rachit", age: 23 }, { id: 2, username: "walia", age: 24 }] });
-});
-
-app.use("/api/doctors", doctorRoutes);
-
-// Profile upload route
-app.post("/profile", upload.single("avatar"), function (req, res, next) {
+// File upload routes
+app.post("/profile", upload.single("avatar"), (req, res, next) => {
   if (!req.file) {
     return res.status(400).send("No file uploaded.");
   }
-  console.log(req.body);
-  console.log(req.file);
+  const imageUrl = `/uploads/${req.file.filename}`;
+  res.render("profile", { imageUrl });
+}, (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).send(err.message);
+  }
+  next(err);  // Pass the error to the custom error handler
+});
 
-  const fileName = req.file.filename;
-  const imageUrl = `/uploads/${fileName}`;
-  return res.render("home", {
-    imageUrl: imageUrl,
-  });
+app.post("/photos/upload", upload.array("photos", 12), (req, res, next) => {
+  if (!req.files.length) {
+    return res.status(400).send("No files uploaded.");
+  }
+  const imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+  res.render("gallery", { imageUrls });
+}, (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).send(err.message);
+  }
+  next(err);  // Pass the error to the custom error handler
 });
-// app.use("/uploads", express.static(path.join(__dirname, "./uploads")));
-// Server Start
-app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
+
+// Error Handling
+app.use((req, res, next) => {
+  res.status(404).render("404", { message: "Page not found" });
 });
+app.use(errorHandler);
+
+app.listen(port, () => console.log(`Server running at http://localhost:${port}`));

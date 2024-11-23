@@ -1,70 +1,40 @@
 const mongoose = require("mongoose");
-
-// Define the schema
-const userSchema = new mongoose.Schema(
-  {
-    firstName: {
-      type: String,
-      required: true,
-      trim: true, // Trims extra whitespace
+const userSchema = mongoose.Schema({
+    firstName:{
+        type : String , 
+        require : [ true , "please add your name"],
     },
-    lastName: {
-      type: String,
-      required: true,
-      trim: true,
+    lastName:{
+        type : String , 
+        require : [ true , "please add your last name"],
     },
-    email: {
-      type: String,
-      required: true,
-      unique: true, // Email should be unique
-      lowercase: true, // Converts email to lowercase before saving
-      validate: {
-        validator: function (v) {
-          // Email validation using regular expression
-          return /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(v);
-        },
-        message: (props) => `${props.value} is not a valid email!`, // Fixed template literal
-      },
+    email:{
+        type : String , 
+        require : [ true , "please add your last name"],
     },
-    age: {
-      type: Number,
-      required: true,
-      min: 18, // Minimum age requirement
-      max: 100, // Maximum age limit
+    age:{
+        type : Number , 
+        require : [ true , "please add your age"],
     },
-    bloodGroup: {
-      type: String,
-      enum: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], // Only allows valid blood groups
-      required: true,
+    bloodGroup:{
+        type : String , 
+        require : [ true , "please add your bloodgroup"],
     },
-    gender: {
-      type: String,
-      enum: ["Male", "Female", "Other"], // Restrict gender options to these values
-      required: true,
+    gender:{
+        type : String , 
+        require : [ true , "please add your gender"],
     },
-    phoneNumber: {
-      type: String, // Changed to String to avoid issues with leading zeros
-      required: true,
-      unique: true,
-      validate: {
-        validator: function (v) {
-          // Ensure the phone number is 10 digits
-          return /^\d{10}$/.test(v);
-        },
-        message: (props) => `${props.value} is not a valid phone number!`, // Fixed template literal
-      },
+    phoneNumber:{
+        type : Number , 
+        require : [ true , "please add your phone number"],
     },
-    password: {
-      type: String,
-      required: true,
-      minlength: 8, // Enforces a minimum password length
-    },
-  },
-  {
-    timestamps: true, // Adds createdAt and updatedAt timestamps
-  }
-);
-
-// Create and export the User model
-const User = mongoose.model("User", userSchema);
-module.exports = User;
+    password:{
+        type : String,
+        require : [ true , "please add your passwprd"],
+    }
+},
+{
+    timestamps : true ,
+});
+module.exports = mongoose.model("User" , userSchema);
+// simple basic model for user

@@ -1,54 +1,33 @@
-const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
+//After successful regester of user, and then calling the login endpoint with the already regestered user, It will create and return JWT Token
+const generateJwtToken = (userData) => {
 
-const doctorSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      validate: {
-        validator: function (v) {
-          return /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(v);
-        },
-        message: (props) => `${props.value} is not a valid email!`,
-      },
-    },
-    specialty: {
-      type: String,
-      required: true,
-    },
-    phoneNumber: {
-      type: String,
-      required: true,
-      unique: true,
-      validate: {
-        validator: function (v) {
-          return /^\d{10}$/.test(v);
-        },
-        message: (props) => `${props.value} is not a valid phone number!`,
-      },
-    },
-    experience: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    address: {
-      type: String,
-      required: true,
-    },
-  },
-  {
-    timestamps: true,
+  return jwt.sign(userData, process.env.PRIVATE_KEY, {expiresIn:"7d"});
+}
+
+//After login, we are getting the token, and for validating the JWT Token, that it is correct or not,, we will proceed with secure routes, to GET/POST/UPDATE/DELETE.
+const validateJwtToken = (req, res, next) => {
+  console.log("validateJwtToken middleware reached");
+  const token = req.headers.authorization?.split(" ")[1];
+  console.log("Token received:", token);
+
+  if (!token) {
+    console.log("No token provided");
+    return res.status(401).json({ error: "Token not provided" });
   }
-);
 
-const Doctor = mongoose.model("Doctor", doctorSchema);
+  try {
+    const decoded = jwt.verify(token, process.env.PRIVATE_KEY);
+    console.log("Token decoded successfully:", decoded);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    console.log("Token validation error:", err.message);
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+};
 
-module.exports = Doctor;
+
+module.exports = {generateJwtToken, validateJwtToken};
+// jwt--

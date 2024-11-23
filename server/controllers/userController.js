@@ -1,144 +1,110 @@
 const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
-const User = require("../models/userModel");
-const jwt = require("jsonwebtoken");
-const {generateJwtToken} = require("../middlewares/jwtMiddleware");
-require("dotenv").config();
-// const generateJwtToken = (user) => {
-//   return jwt.sign(user, process.env.PRIVATE_KEY, { expiresIn: 400000 });
-// };
+const User = require("../models/userModel"); // Corrected variable name to 'User'
+const { generateJwtToken } = require("../middlewares/jwtMiddleware");
 
 const registerUser = asyncHandler(async (req, res) => {
-  const {
-    firstName,
-    lastName,
-    email,
-    password,
-    phoneNumber,
-    age,
-    bloodGroup,
-    gender,
-  } = req.body;
+    const { firstName, lastName, email, phoneNumber, password } = req.body;
 
-  // Check if all fields are provided
-  if (
-    !firstName ||
-    !lastName ||
-    !email ||
-    !password ||
-    !phoneNumber ||
-    !age ||
-    !bloodGroup ||
-    !gender
-  ) {
-    res.status(400);
-    throw new Error("Please provide all required fields");
-  }
-
-  // Check if user already exists
-  const userExist = await User.findOne({ email });
-  if (userExist) {
-    return res.status(400).json({ message: "User already exists" });
-  }
-
-  // Hash password
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
-
-  // Create the user
-  const newUser = await User.create({
-    firstName,
-    lastName,
-    email,
-    phoneNumber,
-    age,
-    bloodGroup,
-    gender,
-    password: hashedPassword,
-  });
-  console.log("New User:", newUser);
-
-  const token = generateJwtToken({
-    id: newUser._id,
-    name: newUser.name,
-    email: newUser.email,
-    specialty: newUser.specialty,
-    phoneNumber: newUser.phoneNumber,
-    experience: newUser.experience,
-    address: newUser.address,
-  });
-
-  // Send success response
-  res
-    .status(201)
-    .json({ message: "User registered successfully", user: newUser, token });
-});
-
-// const myAccount = asyncHandler(async ( req, res)=>{
-
-// })
-
-// Static Login
-const loginUser = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    res.status(400);
-    throw new Error("please fill all fields");
-  }
-  const user = await User.findOne({ email });
-
-  if (!user) {
-    return res.status(401).json({ message: "Invalid credentials" });
-  }
-  const passwordMatch = await bcrypt.compare(password, user.password);
-
-  if (!passwordMatch) {
-    return res.status(400).json({ message: "password did not match" });
-  }
-
-  res.status(200).json({ message: "Login successfully", user});
-});
-
-const getUserProfile = asyncHandler(async (req, res) => {
-  try {
-    const {email} = req.body;
-    const data = await User.findOne({ email });
-    if (!data) {
-      return res.status(401).json({ message: "User not found" });
-    }
-    return res.status(200).json(data);
-  } catch (err) {
-    res.status(500).json({ err });
-  }
-});
-
-const updateUserProfile = asyncHandler(async (req, res) => {
-  try{
-    const {firstName, lastName, email, phoneNumber, age, bloodGroup, gender, password} = req.body;
-
-    const user = await User.findOne({ email });
-    if(!user){
-      return res.status(401).json({ message: "User not found" });
+    // Validate all required fields
+    if (!firstName || !lastName || !email || !phoneNumber || !password) {
+        res.status(400);
+        throw new Error("Please fill all fields");
     }
 
+    // Check if the user already exists
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+        return res.status(400).json({ message: "User already exists" });
+    }
+
+    // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    if (firstName) user.firstName = firstName;
-    if(lastName) user.lastName = lastName;
-    if(email) user.email = email;
-    if(phoneNumber) user.phoneNumber = phoneNumber;
-    if(age) user.age = age;
-    if(bloodGroup) user.bloodGroup = bloodGroup;
-    if(gender) user.gender = gender;
-    if(password) user.password = hashedPassword
 
-    const updatedUser = await user.save();
+    // Create a new user
+    const newUser = await User.create({
+        firstName,
+        lastName,
+        email,
+        phoneNumber,
+        password: hashedPassword,
+    });
 
-    return res.status(200).json(updatedUser);
-  }
-  catch(err){
-    res.status(500).json({err});
-  }
+    res.status(201).json({ message: "User registered successfully", user: newUser });
 });
 
-module.exports = { registerUser, loginUser, getUserProfile, updateUserProfile };
+module.exports = { registerUser };
+
+const loginUser = asyncHandler(async(req, res) => {
+    const {email, password} = req.body;
+    if(!email || !password){
+        res.status(400);
+        throw new Error("please fill all fields");
+    }
+    const user = await User.findOne({email});
+
+    if(!user){
+        return res.status(401).json({ message: "Invalid credentials" });
+    }
+    const passwordMatch  = await bcrypt.compare(password, user.password);
+
+    if(!passwordMatch){
+        return res.status(400).json({message:"password did not match"});
+    } 
+    
+    const token = generateJwtToken({
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phoneNumber: user.phoneNumber,
+            bloodGroup: user.bloodGroup,
+            age: user.age,
+            gender: user.gender,
+    });
+    res.status(200).json({message:"Login successfully", token:token})
+});    
+
+const getUserProfile = asyncHandler(async (req, res) => {
+    try {
+
+        const user = await User.findById(req.user.id).select("-password");
+
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        return res.status(200).json({ user });
+    } catch (err) {
+        res.status(500).json({ message: "Server error", error: err.message });
+    }
+});
+
+const updateUserProfile = asyncHandler(async(req, res) => {
+    try{
+        const { firstName, lastName, age, gender, bloodGroup, email, phoneNumber } = req.body;
+        const userId = req.user.id;
+        const updateUser = await User.findByIdAndUpdate(
+            userId, {
+                firstName,
+                lastName,
+                age,
+                gender,
+                bloodGroup,
+                email,
+                phoneNumber
+            },
+            {new: true, runValidators:true}
+        ).select("-password");
+
+        if(!updateUser) return res.status(404).json({message:"user not found"});
+
+        return res.status(200).json({message:"user updated successfully", user: updateUser});
+    }    
+    catch(err) {
+        return res.status(500).json({message:"Server error", error:err,message});
+    }    
+});
+
+
+
+module.exports = { registerUser , loginUser, getUserProfile, updateUserProfile };
